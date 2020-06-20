@@ -19,26 +19,27 @@ public class DNS {
                 Socket clientSocket = serverSocket.accept();
                 DataInputStream dataInputStream =
                         new DataInputStream(new BufferedInputStream(clientSocket.getInputStream()));
-                DataOutputStream dataOutputStream =
-                        new DataOutputStream(new BufferedOutputStream(clientSocket.getOutputStream()));
                 if(dataInputStream.readUTF().startsWith("bank")) {
-                    handleBank(clientSocket, dataInputStream, dataOutputStream);
+                    handleBank(dataInputStream);
                 } else {
-                    handleClient(clientSocket, dataInputStream, dataOutputStream);
+                    handleClient(clientSocket, dataInputStream);
                 }
+                clientSocket.close();
             } catch (IOException e) {}
         }
     }
 
-    private void handleClient(Socket clientSocket, DataInputStream dataInputStream, DataOutputStream dataOutputStream)
-            throws IOException {
+    private void handleClient(Socket clientSocket, DataInputStream dataInputStream) throws IOException {
+        DataOutputStream dataOutputStream =
+                new DataOutputStream(new BufferedOutputStream(clientSocket.getOutputStream()));
         dataOutputStream.writeInt(bankPorts.get(dataInputStream.readUTF().substring("client".length())));
         dataOutputStream.flush();
-        clientSocket.close();
     }
 
-    private void handleBank(Socket clientSocket, DataInputStream dataInputStream, DataOutputStream dataOutputStream) {
-
+    private void handleBank(DataInputStream dataInputStream) throws IOException {
+        int bankPort = Integer.parseInt(dataInputStream.readUTF().split(",")[0].substring("bank".length()));
+        String bankName = dataInputStream.readUTF().replace("bank" + bankPort + ",", "");
+        bankPorts.put(bankName, bankPort);
     }
 
     public int getBankServerPort(String bankName) {

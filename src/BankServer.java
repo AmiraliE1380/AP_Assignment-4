@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.Scanner;
 
 public class BankServer {
-    private HashMap<Integer, Integer> accounts;
+    private HashMap<Integer, Integer> accounts;     //First Integer is account ID, second is balance
     private int connectedClients;
     private Socket socket;
     private DataInputStream dataInputStream;
@@ -21,7 +21,7 @@ public class BankServer {
             connectedClients = 0;
             socket = new Socket("127.0.0.1", dnsPort);
             dataOutputStream = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
-            dataOutputStream.writeUTF("bank" + bankName + "," + dnsPort);
+            dataOutputStream.writeUTF("bank" + dnsPort + "," + bankName);
             dataOutputStream.flush();
             socket.close();
         } catch(Exception e) {}
@@ -32,6 +32,6 @@ public class BankServer {
     }
 
     public int getNumberOfConnectedClients() {
-        return 0;
+        return connectedClients;
     }
 }
