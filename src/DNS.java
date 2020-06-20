@@ -2,7 +2,6 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
-import java.util.Scanner;
 
 public class DNS {
     private HashMap<String, Integer> bankPorts;
@@ -11,10 +10,10 @@ public class DNS {
     public DNS(int dnsPort) throws IOException {
         bankPorts = new HashMap<>();
         serverSocket = new ServerSocket(dnsPort);
-        waitForClients();
+        waitForBanksAndClients();
     }
 
-    private void waitForClients() {
+    private void waitForBanksAndClients() {
         while(true) {
             try {
                 Socket clientSocket = serverSocket.accept();
@@ -22,11 +21,24 @@ public class DNS {
                         new DataInputStream(new BufferedInputStream(clientSocket.getInputStream()));
                 DataOutputStream dataOutputStream =
                         new DataOutputStream(new BufferedOutputStream(clientSocket.getOutputStream()));
-                dataOutputStream.writeInt(bankPorts.get(dataInputStream.readUTF()));
-                dataOutputStream.flush();
-                clientSocket.close();
+                if(dataInputStream.readUTF().startsWith("bank")) {
+                    handleBank(clientSocket, dataInputStream, dataOutputStream);
+                } else {
+                    handleClient(clientSocket, dataInputStream, dataOutputStream);
+                }
             } catch (IOException e) {}
         }
+    }
+
+    private void handleClient(Socket clientSocket, DataInputStream dataInputStream, DataOutputStream dataOutputStream)
+            throws IOException {
+        dataOutputStream.writeInt(bankPorts.get(dataInputStream.readUTF().substring("client".length())));
+        dataOutputStream.flush();
+        clientSocket.close();
+    }
+
+    private void handleBank(Socket clientSocket, DataInputStream dataInputStream, DataOutputStream dataOutputStream) {
+
     }
 
     public int getBankServerPort(String bankName) {
