@@ -10,35 +10,26 @@ public class DNS {
 
     public DNS(int dnsPort) throws IOException {
         bankPorts = new HashMap<>();
-        serverSocket = new ServerSocket(dnsPort);
         numOfBanks = dnsPort + 1;
-        run();
-    }
-
-    private void run() {
-        while(true) {
-            try {
-                Socket clientSocket = serverSocket.accept();
-                new ClientHandler(clientSocket, this).start();
-            } catch (IOException e) {}
-        }
+        new Server(dnsPort, this).start();
     }
 
     private synchronized void handle(DataInputStream dataInputStream, DataOutputStream dataOutputStream) throws IOException{
-        if(dataInputStream.readUTF().startsWith("bank")) {
-            handleBank(dataInputStream, dataOutputStream);
+        String clientMessage = dataInputStream.readUTF();
+        if(clientMessage.startsWith("bank")) {
+            handleBank(clientMessage, dataOutputStream);
         } else {
-            handleClient(dataInputStream, dataOutputStream);
+            handleClient(clientMessage, dataOutputStream);
         }
     }
 
-    private void handleClient(DataInputStream dataInputStream, DataOutputStream dataOutputStream) throws IOException {
-        dataOutputStream.writeInt(bankPorts.get(dataInputStream.readUTF().substring("client".length())));
+    private void handleClient(String clientMessage, DataOutputStream dataOutputStream) throws IOException {
+        dataOutputStream.writeInt(bankPorts.get(clientMessage.substring("client".length())));
         dataOutputStream.flush();
     }
 
-    private void handleBank(DataInputStream dataInputStream, DataOutputStream dataOutputStream) throws IOException {
-        String bank = dataInputStream.readUTF().substring("bank,".length());
+    private void handleBank(String clientMessage, DataOutputStream dataOutputStream) throws IOException {
+        String bank = clientMessage.substring("bank,".length());
         bankPorts.put(bank, numOfBanks);
         dataOutputStream.writeInt(numOfBanks++);
         dataOutputStream.flush();
@@ -46,6 +37,26 @@ public class DNS {
 
     public int getBankServerPort(String bankName) {
         return bankPorts.get(bankName);
+    }
+
+    static class Server extends Thread {
+        private ServerSocket serverSocket;
+        private DNS parent;
+
+        private Server(int dnsPort, DNS parent) throws IOException {
+            serverSocket = new ServerSocket(dnsPort);
+            this.parent = parent;
+        }
+
+        @Override
+        public void run() {
+            while(true) {
+                try {
+                    Socket clientSocket = serverSocket.accept();
+                    new ClientHandler(clientSocket, parent).start();
+                } catch (IOException e) {}
+            }
+        }
     }
 
     static class ClientHandler extends Thread {
@@ -66,15 +77,12 @@ public class DNS {
         @Override
         public void run() {
             try {
-                handleClient();
+                dnsServer.handle(dataInputStream, dataOutputStream);
+                clientSocket.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
 
-        private void handleClient() throws IOException {
-            dnsServer.handle(dataInputStream, dataOutputStream);
-            clientSocket.close();
-        }
     }
 }

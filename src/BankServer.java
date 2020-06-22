@@ -2,7 +2,6 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
-import java.util.Scanner;
 
 public class BankServer {
     private HashMap<Integer, Integer> accounts;     //First Integer is account ID, second is balance
@@ -25,21 +24,8 @@ public class BankServer {
             dataOutputStream.flush();
             port = dataInputStream.readInt();
             socket.close();
-            waitForClients();
+            new Server(this).start();
         } catch(Exception e) {}
-    }
-
-    private void waitForClients() {
-        try {
-            ServerSocket serverSocket = new ServerSocket(port);
-            while(true) {
-                socket = serverSocket.accept();
-                connectedClients++;
-                new ClientHandler(socket, this);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     private synchronized void executeTransaction(DataInputStream dataInputStream, DataOutputStream dataOutputStream)
@@ -71,6 +57,28 @@ public class BankServer {
 
     public int getNumberOfConnectedClients() {
         return connectedClients;
+    }
+
+    static class Server extends Thread {
+        private BankServer bankServer;
+
+        public Server(BankServer bankServer) {
+            this.bankServer = bankServer;
+        }
+
+        @Override
+        public void run() {
+            try {
+                ServerSocket serverSocket = new ServerSocket(bankServer.port);
+                while(true) {
+                    Socket socket = serverSocket.accept();
+                    bankServer.connectedClients++;
+                    new ClientHandler(socket, bankServer);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     static class ClientHandler extends Thread {
