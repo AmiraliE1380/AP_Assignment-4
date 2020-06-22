@@ -1,5 +1,6 @@
 import java.io.*;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 import static java.lang.Thread.sleep;
@@ -48,14 +49,31 @@ public class BankClient {
 
     public void sendAllTransactions(String fileName, final int timeBetweenTransactions) {
         final File file = new File(PATH + fileName);
-        
+        ArrayList<String[]> transactions = readFile(file);
+
         if (timeBetweenTransactions > 0) {
             try {
                 sleep(timeBetweenTransactions);
-                //TODO:
+                for(String[] transaction : transactions) {
+                    sendTransaction(Integer.parseInt(transaction[0]), Integer.parseInt(transaction[1]));
+                }
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
+    }
+
+    private ArrayList<String[]> readFile(File file) {
+        ArrayList<String[]> transactions = new ArrayList<>();
+        try {
+            Scanner scanner = new Scanner(file);
+            while(scanner.hasNextLine()) {
+                String transaction = scanner.nextLine();
+                transactions.add(transaction.split("\\s"));
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        return transactions;
     }
 }
