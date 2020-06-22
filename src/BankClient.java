@@ -26,10 +26,23 @@ public class BankClient {
             dataOutputStream.flush();
             bankPort = dataInputStream.readInt();
             socket.close();
-        } catch (IOException e) {}
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void sendTransaction(int userId, int amount) {
+        try {
+            socket = new Socket("127.0.0.1", bankPort);
+            dataOutputStream = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
+            dataOutputStream.writeUTF(userId + "," + amount);
+            dataOutputStream.flush();
+            dataInputStream = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
+            dataInputStream.readUTF();
+            dataOutputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
     }
 

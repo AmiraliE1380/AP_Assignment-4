@@ -6,10 +6,12 @@ import java.util.HashMap;
 public class DNS {
     private HashMap<String, Integer> bankPorts;
     private ServerSocket serverSocket;
+    private int numOfBanks; //this number must be subtracted by 8000
 
     public DNS(int dnsPort) throws IOException {
         bankPorts = new HashMap<>();
         serverSocket = new ServerSocket(dnsPort);
+        numOfBanks = 8000;
         waitForBanksAndClients();
     }
 
@@ -19,27 +21,28 @@ public class DNS {
                 Socket clientSocket = serverSocket.accept();
                 DataInputStream dataInputStream =
                         new DataInputStream(new BufferedInputStream(clientSocket.getInputStream()));
+                DataOutputStream dataOutputStream =
+                        new DataOutputStream(new BufferedOutputStream(clientSocket.getOutputStream()));
                 if(dataInputStream.readUTF().startsWith("bank")) {
-                    handleBank(dataInputStream);
+                    handleBank(dataInputStream, dataOutputStream);
                 } else {
-                    handleClient(clientSocket, dataInputStream);
+                    handleClient(dataInputStream, dataOutputStream);
                 }
                 clientSocket.close();
             } catch (IOException e) {}
         }
     }
 
-    private void handleClient(Socket clientSocket, DataInputStream dataInputStream) throws IOException {
-        DataOutputStream dataOutputStream =
-                new DataOutputStream(new BufferedOutputStream(clientSocket.getOutputStream()));
+    private void handleClient(DataInputStream dataInputStream, DataOutputStream dataOutputStream) throws IOException {
         dataOutputStream.writeInt(bankPorts.get(dataInputStream.readUTF().substring("client".length())));
         dataOutputStream.flush();
     }
 
-    private void handleBank(DataInputStream dataInputStream) throws IOException {
-        int bankPort = Integer.parseInt(dataInputStream.readUTF().split(",")[0].substring("bank".length()));
-        String bankName = dataInputStream.readUTF().replace("bank" + bankPort + ",", "");
-        bankPorts.put(bankName, bankPort);
+    private void handleBank(DataInputStream dataInputStream, DataOutputStream dataOutputStream) throws IOException {
+        String bank = dataInputStream.readUTF().substring("bank,".length());
+        bankPorts.put(bank, numOfBanks);
+        dataOutputStream.writeInt(numOfBanks++);
+        dataOutputStream.flush();
     }
 
     public int getBankServerPort(String bankName) {
