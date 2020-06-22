@@ -40,7 +40,7 @@ public class BankClient {
             dataOutputStream.flush();
             dataInputStream = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
             dataInputStream.readUTF();
-            dataOutputStream.close();
+            socket.close();
         } catch (IOException e) {
             e.printStackTrace();
         }

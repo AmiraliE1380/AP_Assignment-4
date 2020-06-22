@@ -1,3 +1,4 @@
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import java.io.IOException;
@@ -31,7 +32,16 @@ public class NonBlockingRequestsTest {
     }
 
     @Test
-    public void testSingleServerMultiClient_N() throws IOException {
+    public void testSingleServerMultiClient_N() throws IOException, InterruptedException {
+        DNS dns = new DNS(8080);
+        BankServer bankServer1 = new BankServer("Saman", 8080);
+        BankServer bankServer2 = new BankServer("Melli", 8080);
+        sleep(2000);
+        BankClient bankClient = new BankClient("Saman", 8080);
+        bankClient.sendTransaction(1, -1);
+        sleep(2000);
+        bankClient.sendTransaction(1, 1000);
+        Assert.assertEquals(1000, bankServer1.getBalance(1));
         //...
     }
 

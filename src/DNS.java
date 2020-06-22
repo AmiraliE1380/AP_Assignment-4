@@ -6,30 +6,29 @@ import java.util.HashMap;
 public class DNS {
     private HashMap<String, Integer> bankPorts;
     private ServerSocket serverSocket;
-    private int numOfBanks; //this number must be subtracted by 8000
+    private int numOfBanks; //this number must be subtracted by dnsPort
 
     public DNS(int dnsPort) throws IOException {
         bankPorts = new HashMap<>();
         serverSocket = new ServerSocket(dnsPort);
-        numOfBanks = 8000;
-        waitForBanksAndClients();
+        numOfBanks = dnsPort + 1;
+        run();
     }
 
-    private void waitForBanksAndClients() {
+    private void run() {
         while(true) {
             try {
                 Socket clientSocket = serverSocket.accept();
-                DataInputStream dataInputStream =
-                        new DataInputStream(new BufferedInputStream(clientSocket.getInputStream()));
-                DataOutputStream dataOutputStream =
-                        new DataOutputStream(new BufferedOutputStream(clientSocket.getOutputStream()));
-                if(dataInputStream.readUTF().startsWith("bank")) {
-                    handleBank(dataInputStream, dataOutputStream);
-                } else {
-                    handleClient(dataInputStream, dataOutputStream);
-                }
-                clientSocket.close();
+                new ClientHandler(clientSocket, this).start();
             } catch (IOException e) {}
+        }
+    }
+
+    private synchronized void handle(DataInputStream dataInputStream, DataOutputStream dataOutputStream) throws IOException{
+        if(dataInputStream.readUTF().startsWith("bank")) {
+            handleBank(dataInputStream, dataOutputStream);
+        } else {
+            handleClient(dataInputStream, dataOutputStream);
         }
     }
 
@@ -47,5 +46,35 @@ public class DNS {
 
     public int getBankServerPort(String bankName) {
         return bankPorts.get(bankName);
+    }
+
+    static class ClientHandler extends Thread {
+        Socket clientSocket;
+        DNS dnsServer;
+        DataOutputStream dataOutputStream;
+        DataInputStream dataInputStream;
+
+        public ClientHandler(Socket clientSocket, DNS dnsServer) throws IOException {
+            dataInputStream =
+                    new DataInputStream(new BufferedInputStream(clientSocket.getInputStream()));
+            dataOutputStream =
+                    new DataOutputStream(new BufferedOutputStream(clientSocket.getOutputStream()));
+            this.dnsServer = dnsServer;
+            this.clientSocket = clientSocket;
+        }
+
+        @Override
+        public void run() {
+            try {
+                handleClient();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        private void handleClient() throws IOException {
+            dnsServer.handle(dataInputStream, dataOutputStream);
+            clientSocket.close();
+        }
     }
 }
