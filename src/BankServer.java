@@ -10,13 +10,13 @@ public class BankServer {
     private Socket socket;
 
     public BankServer(String bankName, int dnsPort) {
+        accounts = new HashMap<>();
+        connectedClients = 0;
         callDNS(bankName, dnsPort);
     }
 
     private void callDNS(String bankName, int dnsPort) {
         try {
-            accounts = new HashMap<>();
-            connectedClients = 0;
             socket = new Socket("127.0.0.1", dnsPort);
             DataOutputStream dataOutputStream = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
             DataInputStream dataInputStream = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
@@ -28,9 +28,8 @@ public class BankServer {
         } catch(Exception e) {}
     }
 
-    private synchronized void executeTransaction(DataInputStream dataInputStream, DataOutputStream dataOutputStream)
+    private synchronized void executeTransaction(String transaction, DataOutputStream dataOutputStream)
             throws IOException {
-        String transaction = dataInputStream.readUTF();
         int userId = Integer.parseInt(transaction.split(",")[0]);
         int amount = Integer.parseInt(transaction.split(",")[1]);
         if(accounts.get(userId) == null) {
@@ -72,7 +71,6 @@ public class BankServer {
                 ServerSocket serverSocket = new ServerSocket(bankServer.port);
                 while(true) {
                     Socket socket = serverSocket.accept();
-                    bankServer.connectedClients++;
                     new ClientHandler(socket, bankServer).start();
                 }
             } catch (IOException e) {
@@ -97,12 +95,22 @@ public class BankServer {
         @Override
         public void run() {
             try {
-                bankServer.executeTransaction(dataInputStream, dataOutputStream);
-                socket.close();
+                String clientMessage = dataInputStream.readUTF();
+                if(clientMessage.equals("add client.")) {
+                    addClient(dataOutputStream);
+                } else {
+                    bankServer.executeTransaction(clientMessage, dataOutputStream);
+                    socket.close();
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            bankServer.connectedClients--;
+        }
+
+        private void addClient(DataOutputStream dataOutputStream) throws IOException {
+            bankServer.connectedClients++;
+            dataOutputStream.writeUTF("Successful");
+            dataOutputStream.flush();
         }
     }
 }

@@ -5,7 +5,6 @@ import java.util.HashMap;
 
 public class DNS {
     private HashMap<String, Integer> bankPorts;
-    private ServerSocket serverSocket;
     private int numOfBanks; //this number must be subtracted by dnsPort
 
     public DNS(int dnsPort) throws IOException {
@@ -36,6 +35,9 @@ public class DNS {
     }
 
     public int getBankServerPort(String bankName) {
+        if(bankPorts.get(bankName) == null) {
+            return -1;
+        }
         return bankPorts.get(bankName);
     }
 
