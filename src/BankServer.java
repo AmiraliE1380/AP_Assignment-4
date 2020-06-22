@@ -51,6 +51,9 @@ public class BankServer {
     }
 
     public int getBalance(int userId) {
+        if(accounts.get(userId) == null) {
+            return 0;
+        }
         return accounts.get(userId);
     }
 

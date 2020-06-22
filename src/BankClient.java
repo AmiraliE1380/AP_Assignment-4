@@ -61,7 +61,7 @@ public class BankClient {
         final File file = new File(PATH + fileName);
         ArrayList<String[]> transactions = readFile(file);
 
-        if (timeBetweenTransactions > 0) {
+        if (timeBetweenTransactions >= 0) {
             try {
                 sleep(timeBetweenTransactions);
                 for(String[] transaction : transactions) {
@@ -73,7 +73,7 @@ public class BankClient {
         }
     }
 
-    private ArrayList<String[]> readFile(File file) {
+    public ArrayList<String[]> readFile(File file) {
         ArrayList<String[]> transactions = new ArrayList<>();
         try {
             Scanner scanner = new Scanner(file);
