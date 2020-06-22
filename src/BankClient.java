@@ -44,7 +44,6 @@ public class BankClient {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 
     public void sendAllTransactions(String fileName, final int timeBetweenTransactions) {

@@ -6,7 +6,7 @@ import java.util.HashMap;
 public class BankServer {
     private HashMap<Integer, Integer> accounts;     //First Integer is account ID, second is balance
     private int connectedClients;
-    private int port;
+    private int port; //TODO: THINK OF A WAY TO GENERATE PORT NUMBERS
     private Socket socket;
 
     public BankServer(String bankName, int dnsPort) {
@@ -73,7 +73,7 @@ public class BankServer {
                 while(true) {
                     Socket socket = serverSocket.accept();
                     bankServer.connectedClients++;
-                    new ClientHandler(socket, bankServer);
+                    new ClientHandler(socket, bankServer).start();
                 }
             } catch (IOException e) {
                 e.printStackTrace();
