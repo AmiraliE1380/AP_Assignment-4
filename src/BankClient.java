@@ -58,22 +58,10 @@ public class BankClient {
     }
 
     public void sendAllTransactions(String fileName, final int timeBetweenTransactions) {
-        final File file = new File(PATH + fileName);
-        ArrayList<String[]> transactions = readFile(file);
-
-        if (timeBetweenTransactions >= 0) {
-            try {
-                sleep(timeBetweenTransactions);
-                for(String[] transaction : transactions) {
-                    sendTransaction(Integer.parseInt(transaction[0]), Integer.parseInt(transaction[1]));
-                }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
+        new TransactionHandler(fileName, timeBetweenTransactions, this).start();
     }
 
-    public ArrayList<String[]> readFile(File file) {
+    private synchronized ArrayList<String[]> readFile(File file) {
         ArrayList<String[]> transactions = new ArrayList<>();
         try {
             Scanner scanner = new Scanner(file);
@@ -85,5 +73,34 @@ public class BankClient {
             e.printStackTrace();
         }
         return transactions;
+    }
+
+    static class TransactionHandler extends Thread {
+        private String fileName;
+        private BankClient parent;
+        private int timeBetweenTransactions;
+
+        private TransactionHandler(String fileName, final int timeBetweenTransactions, BankClient parent) {
+            this.fileName = fileName;
+            this.timeBetweenTransactions = timeBetweenTransactions;
+            this.parent = parent;
+        }
+
+        @Override
+        public void run() {
+            final File file = new File(PATH + fileName);
+            ArrayList<String[]> transactions = parent.readFile(file);
+
+            if (timeBetweenTransactions >= 0) {
+                try {
+                    sleep(timeBetweenTransactions);
+                    for(String[] transaction : transactions) {
+                        parent.sendTransaction(Integer.parseInt(transaction[0]), Integer.parseInt(transaction[1]));
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 }
